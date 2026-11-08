@@ -437,6 +437,7 @@ RUN.cards = function () {
   var flipped = false;
   function draw() {
     var w = WORDS[idx];
+    seen[idx] = true;
     $("flash").innerHTML = '<div style="text-align:right">' + speakBtn(w.en) + '</div>' +
       '<div class="pic">' + pic(w.pic) + '</div><div class="word">' + w.en + '</div><div class="say">[' + w.say + ']</div>' +
       (flipped ? '<div class="back"><div class="ko">' + w.ko + '</div><div class="ex">' + w.ex + ' ' + speakBtn(w.ex) + '</div><div class="exko">' + w.exko + '</div></div>'
@@ -445,14 +446,14 @@ RUN.cards = function () {
     $("dots").innerHTML = d;
     $("fprev").disabled = idx === 0;
     $("fnext").disabled = idx === WORDS.length - 1;
-    $("fdone").classList.toggle("hidden", Object.keys(seen).length < WORDS.length);
+    $("fdone").classList.toggle("hidden", idx < WORDS.length - 1 && Object.keys(seen).length < WORDS.length);
   }
   $("flash").addEventListener("click", function (e) {
     if (e.target.closest && e.target.closest("[data-say]")) return;
-    if (!flipped) { flipped = true; seen[idx] = true; say(WORDS[idx].en); draw(); }
+    flipped = !flipped; if (flipped) say(WORDS[idx].en); draw();
   });
-  $("fprev").addEventListener("click", function () { if (idx > 0) { idx--; flipped = !!seen[idx]; draw(); } });
-  $("fnext").addEventListener("click", function () { if (idx < WORDS.length - 1) { idx++; flipped = !!seen[idx]; draw(); } });
+  $("fprev").addEventListener("click", function () { if (idx > 0) { idx--; flipped = false; draw(); } });
+  $("fnext").addEventListener("click", function () { if (idx < WORDS.length - 1) { idx++; flipped = false; draw(); } });
   $("fdone").addEventListener("click", function () { missionClear("단어 20개를 모두 만났어요!"); });
   draw();
   body.appendChild(backToMapLink());
@@ -666,7 +667,7 @@ RUN.read = function () {
   var r = 0;
   function passage() {
     var R = READINGS[r];
-    $("m-sub").innerHTML = "<b>" + R.title + "</b> (" + (r + 1) + " / " + READINGS.length + ")<br>문장마다 🔊 듣고 따라 읽기 → 모르면 [뜻 보기]. 모든 문장에 ✔가 생기면 확인 문제가 나와요.";
+    $("m-sub").innerHTML = "<b>" + R.title + "</b> (" + (r + 1) + " / " + READINGS.length + ")<br>문장마다 🔊 듣고 따라 읽기 → 모르면 [뜻 보기]. 다 읽으면 아래로 내려가서 확인 문제를 풀어요 ⬇️";
     var body = $("m-body"); body.innerHTML = "";
     if (r === 0) {
       var dg = document.createElement("div"); dg.className = "diagram";
@@ -674,12 +675,12 @@ RUN.read = function () {
       body.appendChild(dg);
     }
     var read = {}, total = R.lines.length;
-    var chkBox = document.createElement("div"); chkBox.className = "chk hidden";
+    var chkBox = document.createElement("div"); chkBox.className = "chk";
     R.lines.forEach(function (L, i) {
       var plain = L[0].replace(/<[^>]+>/g, "");
       var s = document.createElement("div"); s.className = "sent";
       s.innerHTML = speakBtn(plain) + '<div><div class="en">' + L[0] + '</div><div class="ko hidden">' + L[1] + '</div><button class="kobtn">🇰🇷 뜻 보기</button></div>';
-      function mark() { read[i] = true; s.classList.add("done"); if (Object.keys(read).length === total) chkBox.classList.remove("hidden"); }
+      function mark() { read[i] = true; s.classList.add("done"); }
       s.querySelector(".speak").addEventListener("click", mark);
       s.querySelector(".kobtn").addEventListener("click", function () { s.querySelector(".ko").classList.remove("hidden"); this.classList.add("hidden"); mark(); });
       body.appendChild(s);
